@@ -6,16 +6,16 @@ BigQuery の SQL が営業の質問（業務要件）に答えているかを、
 ## 情報の正（論点 → ファイル）
 | 論点 | 正になるファイル |
 |---|---|
-| レビュー手順・出力形式 | `skill/SKILL.md` |
-| 罠の定義・見つけ方 | `skill/references/trap-checklist.md` |
-| 指標定義表の雛形 | `skill/references/metric-definitions.md` |
+| レビュー手順・出力形式 | `SKILL.md` |
+| 罠の定義・見つけ方 | `references/trap-checklist.md` |
+| 指標定義表の雛形 | `references/metric-definitions.md` |
 | テストケースと正解 SQL | `tests/cases.yaml` |
 | テスト用データ | `tests/datasets.sql`（dojo の複製。編集しない）、`tests/datasets_extra.sql`（独自追加） |
 | テスト用のテーブル定義・指標定義 | `tests/schema.md`、`tests/metric-definitions.md` |
 | 検出精度の実績と評価手順 | `tests/blind-eval/README.md`（結果表・出力の実物）。README の「テスト」節は要約 |
 | 初回試行の手順 | `docs/field-trial.md` |
-| 判定票の形式 | `skill/references/verdict-sheet.md` |
-| v2 ログ一括レビューの設計・手順 | `skill/references/batch-review.md`。実装は `skill/scripts/`、動作確認は `tests/check_tools.py` |
+| 判定票の形式 | `references/verdict-sheet.md` |
+| v2 ログ一括レビューの設計・手順 | `references/batch-review.md`。実装は `scripts/`、動作確認は `tests/check_tools.py` |
 | 日ごとの整理（非エンジニア向け） | `docs/summaries/<日付>.md` |
 | Skill の解説（非エンジニア向け） | `docs/guide.md` |
 | 現在地・次にやること・未解決 | `docs/STATUS.md` |

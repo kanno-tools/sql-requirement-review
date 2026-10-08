@@ -5,11 +5,7 @@
 ## 1. Skill を入れる（古いものを消して入れ直す）
 
 ```
-git clone https://github.com/KANNOHI1/sql-requirement-review.git
-rm -rf ~/.gemini/skills/sql-requirement-review
-mkdir -p ~/.gemini/skills/sql-requirement-review
-cp -r sql-requirement-review/skill/. ~/.gemini/skills/sql-requirement-review/
-rm -rf sql-requirement-review
+git clone git@github.com:kanno-tools/sql-requirement-review.git ~/.gemini/skills/sql-requirement-review
 ```
 
 ## 2. 入ったことを確認する

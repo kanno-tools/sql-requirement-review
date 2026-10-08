@@ -55,7 +55,7 @@ Gemini CLI を再起動し、`/skills` に `sql-requirement-review` が出るこ
 
 `bq` が使える環境では dry run と件数確認まで行う。実行は SELECT と `--dry_run` に限る（SKILL.md 手順 5）。
 
-実際の要件と SQL で試すときは `docs/field-trial.md` の手順で行う。エージェントのログ（xlsx）を一括でレビューするなら `skill/references/batch-review.md`（v2。`pip install pandas openpyxl` が要る）。
+実際の要件と SQL で試すときは `docs/field-trial.md` の手順で行う。エージェントのログ（xlsx）を一括でレビューするなら `references/batch-review.md`（v2。`pip install pandas openpyxl` が要る）。
 
 ## テスト
 
