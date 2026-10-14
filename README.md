@@ -35,7 +35,7 @@ CLAUDE.md                       規則と「情報の正」の表（毎セッシ
 ## 配置（Gemini CLI）
 
 ```bash
-git clone https://github.com/KANNOHI1/sql-requirement-review.git
+git clone https://github.com/kanno-tools/sql-requirement-review.git
 mkdir -p ~/.gemini/skills/sql-requirement-review
 cp -r sql-requirement-review/skill/. ~/.gemini/skills/sql-requirement-review/
 rm -rf sql-requirement-review          # clone は Skill をコピーしたら消す（下記）
