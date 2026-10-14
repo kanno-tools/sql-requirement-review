@@ -33,7 +33,8 @@ def main() -> int:
         td = Path(td)
         subprocess.run([sys.executable, HERE / "make_fake_log.py", td / "log.xlsx"], check=True, capture_output=True)
         subprocess.run([sys.executable, ROOT / "scripts/split_log.py", "--xlsx", td / "log.xlsx",
-                        "--out", td / "work", "--schema", HERE / "schema.md"], check=True, capture_output=True)
+                        "--out", td / "work", "--schema", HERE / "schema.md",
+                        "--definitions", HERE / "metric-definitions.md"], check=True, capture_output=True)
         work = td / "work"
         reqs = sorted(p.name for p in work.glob("req*.md"))
         assert reqs == ["req001.md", "req002.md", "req003.md", "req004.md", "req005.md"], reqs
@@ -60,6 +61,43 @@ def main() -> int:
         rows = (work / "rows.csv").read_text(encoding="utf-8")
         assert "req004,2,138" in rows and "True" in rows
         print(s)
+        # 絞り込み: req002（C02: sales/stores/targets）に customers は入らず、指標定義にある stock は入る
+        r2 = (work / "req002.md").read_text(encoding="utf-8")
+        assert "| stock |" in r2 and "| customers |" not in r2 and "絞ってある" in r2, r2[:400]
+        assert "## 指標定義" in r2 and "references/metric-definitions.md より優先" in r2
+
+        # eval_set アダプタ
+        import yaml
+        cases = {c["id"]: c for c in yaml.safe_load((HERE / "cases.yaml").read_text(encoding="utf-8"))}
+        ev = td / "eval_set.csv"
+        import csv as _csv
+        with ev.open("w", newline="", encoding="utf-8") as f:
+            w = _csv.DictWriter(f, fieldnames=["id", "user_question", "prompt_intent", "expected_output_definition",
+                                               "expected_sql", "source", "added_date", "definitions_version", "last_result"])
+            w.writeheader()
+            w.writerow({"id": "1", "user_question": cases["K01"]["requirement"], "prompt_intent": "店舗別の月次売上",
+                        "expected_output_definition": "1 行 1 店舗、売上は実売金額の合計", "expected_sql": cases["K01"]["sql"],
+                        "source": "test", "added_date": "2026-10-14", "definitions_version": "v1", "last_result": ""})
+            w.writerow({"id": "2", "user_question": cases["C02"]["requirement"], "prompt_intent": "目標と実績の一覧",
+                        "expected_output_definition": "目標がある得意先を全部出す", "expected_sql": cases["C02"]["reference"],
+                        "source": "test", "added_date": "2026-10-14", "definitions_version": "v1", "last_result": ""})
+        cand = td / "2.sql"
+        cand.write_text(cases["C02"]["sql"], encoding="utf-8")
+        ew = td / "ework"
+        subprocess.run([sys.executable, ROOT / "scripts/split_eval.py", "--csv", ev, "--id", "1", "--review-expected",
+                        "--out", ew, "--schema", HERE / "schema.md"], check=True, capture_output=True)
+        subprocess.run([sys.executable, ROOT / "scripts/split_eval.py", "--csv", ev, "--id", "2", "--candidate", cand,
+                        "--out", ew, "--schema", HERE / "schema.md", "--definitions", HERE / "metric-definitions.md"],
+                       check=True, capture_output=True)
+        e1 = (ew / "req001.md").read_text(encoding="utf-8")
+        e2 = (ew / "req002.md").read_text(encoding="utf-8")
+        assert "精度測定" in e1 and "**期待する答えの要点**" in e1
+        assert "COALESCE" not in e2, "候補のレビューに期待 SQL が混ざっている"
+        assert "JOIN act a ON" in e2 and "**意図**" in e2
+        # meta.csv は 2 回目の実行で上書きされる（1 件）。aggregate が列不足で落ちないこと
+        (ew / "req002_review.md").write_text(carry("不一致", ["T02"], high=1), encoding="utf-8")
+        subprocess.run([sys.executable, ROOT / "scripts/aggregate.py", ew], check=True, capture_output=True)
+        assert "| 不一致 | 1 |" in (ew / "summary.md").read_text(encoding="utf-8")
     print("check_tools OK")
     return 0
 

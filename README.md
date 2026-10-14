@@ -14,7 +14,7 @@ skill/                          ← 配布するのはここだけ
   references/metric-definitions.md  指標定義表の雛形（使う環境で記入する）
   references/verdict-sheet.md   判定票（集計用の固定形式）
   references/batch-review.md    ログ（xlsx）の一括レビューの設計と手順（v2）
-  scripts/                      v2 の分解・判定・集計のプログラム（Skill と一緒にコピーされる）
+  scripts/                      v2 の分解（ログ・答え合わせリスト）・判定・集計のプログラム
 tests/
   cases.yaml                    罠入り SQL 15 本 + 正しい SQL 10 本（罠に見えるが正しいもの）
   datasets.sql                  架空データ（sql-reading-dojo の複製）

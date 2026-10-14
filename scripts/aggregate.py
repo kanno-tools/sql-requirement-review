@@ -86,7 +86,7 @@ def main() -> None:
             unparsed.append(rid)
         hit = [t for t, v in d["T"].items() if v == "該当"]
         unk = [t for t, v in d["T"].items() if v == "不明"]
-        label = norm_label(m["label"])
+        label = norm_label(m.get("label", ""))
         pred = {"合致": "正", "不一致": "誤"}.get(d["verdict"], "要確認")
         agree = "" if not label or label == "その他" else ("一致" if pred == label else ("保留" if pred == "要確認" else "不一致"))
         rows.append({**m, "verdict": d["verdict"], "T_hit": " ".join(hit), "T_unknown": " ".join(unk),
@@ -128,7 +128,7 @@ def main() -> None:
         L.append("| 区分 | 件数 | 合致 | 要確認 | 不一致 |\n|---|---|---|---|---|")
         g = defaultdict(Counter)
         for r in rows:
-            g[fmt(r[key])][r["verdict"]] += 1
+            g[fmt(r.get(key, ""))][r["verdict"]] += 1
         for k in sorted(g):
             c = g[k]
             L.append(f"| {k} | {sum(c.values())} | {c['合致']} | {c['要確認']} | {c['不一致']} |")

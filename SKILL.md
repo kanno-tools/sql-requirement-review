@@ -12,6 +12,7 @@ description: BigQuery の SQL が業務要件（営業の質問）と合って�
 1. **要件**: 営業の質問（自然文）。必須
 2. **SQL**: レビュー対象。必須
 3. **テーブル定義**: 列名・型・意味。無ければ `bq show --schema` か `INFORMATION_SCHEMA.COLUMNS` で取る（手順 5 の条件を守る）。取れなければ SQL から推定し、推定であることを明記する
+4. **指標定義**（任意）: 依頼の中に「## 指標定義」節があればそれを最優先する。無ければ `references/metric-definitions.local.md`、それも無ければ `references/metric-definitions.md`
 
 要件か SQL が欠けていたら、レビューを始めずに求める。
 
