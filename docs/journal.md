@@ -42,3 +42,8 @@
 2026-09-30 11:09｜install-v2 の作業フォルダを product_nl/2_product/sql-requirement-review/sql-review に変更（菅野さんの指定）｜完了
 2026-09-30 11:12｜install-v2 の作業フォルダを project_nl/2_project/… に訂正（product は誤り）｜完了
 2026-09-30 11:16｜install-v2 の作業フォルダを project_nl/2_product/sql-requirement-review/sql-review に確定｜完了
+2026-09-30 14:47｜菅野さんが VM に v2 Skill を導入済み（時刻不明）。install-v2 の手順 1 は完了｜完了
+2026-10-14 11:22｜使う環境側の設計担当（Gemini）から連携の打診: ①指標定義の外部注入 ②eval_set.csv からの入力 ③公開リポジトリの機密分離。回答: ①賛成（--definitions を追加、定義は 1 つを両者が読む）②入力アダプタ split_eval.py で対応、期待 SQL は見せない ③雛形に実名は無いと確認（VM のコピーは git 管理外）。要望: 3 値と正答率の対応、御社データでの精度測定、ゲートでは bq を切る、表名で注入を絞る。固有名は記録しない｜完了
+2026-10-14 11:50｜リポジトリが kanno-tools 組織へ移動していたため push が 403 だった。App を組織に導入後、旧 URL 経由の push が転送されて成功。README と install-v2 の clone 先を kanno-tools に更新｜完了
+2026-10-14 11:53｜連携打診への回答本文を docs/replies/2026-10-14-to-agent-designer.md に保存（固有名なし）。使う環境側が clone して読める形にする｜完了
+2026-10-14 11:55｜main に 10/8 付の平置き化 commit（Skill の置き場所へ直接 clone できる構成、SSH URL）が直接 push されていたため PR #8 が競合。取り込んで解決。実名定義は references/metric-definitions.local.md（gitignore）に書く方式を導入｜完了

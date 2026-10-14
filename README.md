@@ -34,16 +34,17 @@ CLAUDE.md                       規則と「情報の正」の表（毎セッシ
 
 ## 配置（Gemini CLI）
 
+このリポジトリは Skill のフォルダそのものの形（`SKILL.md` がルート）になっているので、Skill の置き場所に直接 clone する。
+
 ```bash
-git clone https://github.com/KANNOHI1/sql-requirement-review.git
-mkdir -p ~/.gemini/skills/sql-requirement-review
-cp -r sql-requirement-review/skill/. ~/.gemini/skills/sql-requirement-review/
-rm -rf sql-requirement-review          # clone は Skill をコピーしたら消す（下記）
+git clone https://github.com/kanno-tools/sql-requirement-review.git ~/.gemini/skills/sql-requirement-review
 ```
+
+更新は `cd ~/.gemini/skills/sql-requirement-review && git pull`。
 
 Gemini CLI を再起動し、`/skills` に `sql-requirement-review` が出ることを確認する。Claude Code なら `~/.claude/skills/` に同じ形で置く。
 
-**要件・SQL・結果のファイルは、このリポジトリの clone の中に置かない。** clone の中に置くと、後で `git add -A` → push した時にレビュー対象のデータが公開リポジトリに載る。Skill をコピーしたら clone は消し、レビュー作業は別の場所（例: `~/sql-review/`）で行う。万一 clone の中で作業しても、`.gitignore` で `req*.md`・`*_result.md`・`*_carry.md` は追跡対象外にしてあるが、これは最後の保険であって前提にしない。
+**要件・SQL・結果のファイルは、この clone の中に置かない。** Skill の置き場所が git の checkout になるので、そこで作業して `git add -A` → push すると、レビュー対象のデータが公開リポジトリに載る。レビュー作業は別の場所（例: `~/sql-review/`）で行う。実名を書く指標定義は `references/metric-definitions.local.md` に書く（git が無視する）。`.gitignore` で `req*.md`・`*_result.md`・`*_carry.md`・`*.local.md` は追跡対象外にしてあるが、これは最後の保険であって前提にしない。
 
 ## 使い方
 

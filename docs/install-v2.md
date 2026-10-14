@@ -8,6 +8,14 @@
 git clone git@github.com:kanno-tools/sql-requirement-review.git ~/.gemini/skills/sql-requirement-review
 ```
 
+すでに clone 済みなら、入れ直す代わりに更新する。
+
+```
+cd ~/.gemini/skills/sql-requirement-review && git pull
+```
+
+**記入済みの `references/metric-definitions.md` を commit しない。** 実名を書く定義は `references/metric-definitions.local.md` に書く（git が無視する。SKILL.md はこちらを優先して読む）。
+
 ## 2. 入ったことを確認する
 
 ```
