@@ -1,7 +1,7 @@
 """エージェントのログ（xlsx）を、1 行 1 レビューの入力ファイル（reqNNN.md）に分解する。
 
-    python ~/.gemini/skills/sql-requirement-review/scripts/split_log.py --xlsx log.xlsx --out work/ [--schema schema.md]
-        [--context session|turn] [--sql last|all] [--sheet rawdata]
+    python ~/.gemini/skills/sql-requirement-review/scripts/split_log.py --xlsx log.xlsx --out work/
+        [--schema schema.md] [--definitions definitions.md] [--context session|turn] [--sql last|all] [--sheet rawdata]
 
 - 出力先は git 管理下の外に置く（レビュー対象の SQL と要件が含まれるため）
 - レビュー入力に入れるのは「要件（ユーザーの質問）」「SQL」「テーブル定義」だけ。
@@ -14,6 +14,10 @@ import re
 from pathlib import Path
 
 import pandas as pd
+
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from reqbuild import build_body  # noqa: E402
 
 DEFAULT_COLS = {
     "timestamp": "列1",
@@ -87,7 +91,9 @@ def main() -> None:
     ap.add_argument("--xlsx", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--sheet", default="rawdata")
-    ap.add_argument("--schema", help="テーブル定義（md）。各 req に埋め込む")
+    ap.add_argument("--schema", help="テーブル定義（md）。SQL と指標定義に出てくる表の分だけ各 req に埋め込む")
+    ap.add_argument("--definitions", help="指標定義表（md）。各 req に埋め込み、スキル内の定義より優先させる")
+    ap.add_argument("--no-filter", action="store_true", help="テーブル定義を絞らず全量を埋め込む")
     ap.add_argument("--context", choices=["session", "turn"], default="session")
     ap.add_argument("--sql", choices=["last", "all"], default="last")
     for k, v in DEFAULT_COLS.items():
@@ -105,6 +111,7 @@ def main() -> None:
     df = df.sort_values([cols["session"], cols["rally"]])
     labels = load_labels(xlsx, args.sheet, cols)
     schema = Path(args.schema).read_text(encoding="utf-8") if args.schema else None
+    definitions = Path(args.definitions).read_text(encoding="utf-8") if args.definitions else None
 
     meta_rows, n = [], 0
     for session, srows in df.groupby(cols["session"], sort=False):
@@ -132,14 +139,9 @@ def main() -> None:
                 n += 1
                 rid = f"req{n:03d}"
                 req = build_requirement(srows, rally, args.context, cols)
-                body = [f"# レビュー依頼 {rid}", "", "## 要件", req, "", "## SQL", "```sql", sql, "```", ""]
-                if len(sqls) > 1:
-                    body.insert(6, f"（この行には SQL が {len(sqls)} 本あり、{idx + 1} 本目をレビュー対象にしている）\n")
-                if schema:
-                    body += ["## テーブル定義", schema, ""]
-                else:
-                    body += ["## テーブル定義", "未提供。`bq show --schema` か INFORMATION_SCHEMA で取るか、SQL から推定して推定と明記する。", ""]
-                (out / f"{rid}.md").write_text("\n".join(body), encoding="utf-8")
+                note = f"この行には SQL が {len(sqls)} 本あり、{idx + 1} 本目をレビュー対象にしている" if len(sqls) > 1 else None
+                text = build_body(rid, req, sql, schema, definitions, note=note, filter_tables=not args.no_filter)
+                (out / f"{rid}.md").write_text(text, encoding="utf-8")
                 meta_rows.append({"id": rid, "sql_index": idx + 1, "sql_chars": len(sql), **base})
 
     with (out / "meta.csv").open("w", newline="", encoding="utf-8") as f:

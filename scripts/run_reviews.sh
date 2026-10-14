@@ -19,7 +19,8 @@ read -r -d '' PROMPT <<'P'
 P
 
 done_n=0
-for f in "$WORK"/req[0-9][0-9][0-9].md; do
+for f in "$WORK"/req*.md; do
+  case "$f" in *_review.md) continue;; esac
   [ -e "$f" ] || { echo "req*.md が無い: $WORK"; exit 1; }
   out="${f%.md}_review.md"
   if [ -s "$out" ]; then continue; fi
@@ -33,4 +34,4 @@ for f in "$WORK"/req[0-9][0-9][0-9].md; do
   fi
   done_n=$((done_n + 1))
 done
-echo "今回 $done_n 件。未処理: $(ls "$WORK"/req[0-9][0-9][0-9].md 2>/dev/null | while read -r r; do [ -s "${r%.md}_review.md" ] || echo x; done | wc -l) 件"
+echo "今回 $done_n 件。未処理: $(ls "$WORK"/req*.md 2>/dev/null | grep -v _review.md | while read -r r; do [ -s "${r%.md}_review.md" ] || echo x; done | wc -l) 件"

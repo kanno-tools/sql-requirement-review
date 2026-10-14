@@ -8,7 +8,7 @@
 
 | 段 | 何が | 誰が | 入力 → 出力 |
 |---|---|---|---|
-| A 分解 | `scripts/split_log.py` | Python | ログ xlsx → `work/reqNNN.md`（1 行 1 件）＋ `work/meta.csv` |
+| A 分解 | `scripts/split_log.py`（ログ）／`scripts/split_eval.py`（答え合わせリスト） | Python | ログ xlsx → `work/reqNNN.md`（1 行 1 件）＋ `work/meta.csv` |
 | B 判定 | `scripts/run_reviews.sh` | Gemini CLI（1 件 1 回） | `reqNNN.md` → `reqNNN_review.md`（レビュー結果＋判定票） |
 | C 集計 | `scripts/aggregate.py` | Python | `*_review.md` ＋ `meta.csv` → `summary.md`・`rows.csv` |
 
@@ -38,6 +38,27 @@ python $S/aggregate.py work/
 ```
 
 列名が違う時は `--col-timestamp 列1` のように指定する。他のシートに `正誤判定` 列があれば、セッション ID とターン番号で突き合わせて自動で取り込む。
+
+## 定義の注入と表の絞り込み
+
+- `--schema schema.md`: テーブル定義。SQL に出てくる表と、指標定義に出てくる表（正本。表の選び違い T13 を見るために残す）の分だけに絞って各依頼に埋め込む。Markdown 表（1 列目が表名、続く行は空欄）の形式なら絞れる。別の形式や 1 行も残らない時は全量を入れる。`--no-filter` で絞らない
+- `--definitions definitions.md`: 指標定義表。全量を「## 指標定義」節として埋め込み、スキル内の `references/metric-definitions.md` より優先させる。SQL を書く側と同じ正本から生成したファイルを渡す
+- 優先順位: 依頼内の「## 指標定義」 → `references/metric-definitions.local.md` → `references/metric-definitions.md`
+
+## 答え合わせリスト（eval_set.csv）からの入力
+
+列: `id, user_question, prompt_intent, expected_output_definition, expected_sql, source, added_date, definitions_version, last_result`。
+
+```bash
+# 改修した候補 SQL を id 105 の要件に対してレビュー
+python $S/split_eval.py --csv eval_set.csv --id 105 --candidate fixed.sql --out work/ --schema schema.md --definitions definitions.md
+# 候補を id ごとのファイル（<id>.sql）から
+python $S/split_eval.py --csv eval_set.csv --id all --candidate-dir fixes/ --out work/ --schema schema.md --definitions definitions.md
+# 精度測定: 期待 SQL そのものをレビュー（すべて「合致」になるべき）
+python $S/split_eval.py --csv eval_set.csv --id all --review-expected --out work/ --schema schema.md --definitions definitions.md
+```
+
+要件は質問・意図・期待する答えの要点から組み立てる。**期待 SQL は依頼に入れない**（入れるとレビューが期待 SQL に引きずられる）。候補と期待 SQL の数値の一致は、この Skill ではなく、同じ 1 日分のパーティションで両方を実行して比べる別の検査で行う。あとは `run_reviews.sh` と `aggregate.py` がそのまま使える。`meta.csv` に `definitions_version` が残るので、定義の改訂と Skill の誤検出を区別できる。
 
 ## summary.md の読み方
 
