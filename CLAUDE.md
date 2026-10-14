@@ -18,7 +18,7 @@ BigQuery の SQL が営業の質問（業務要件）に答えているかを、
 | v2 ログ一括レビューの設計・手順 | `references/batch-review.md`。実装は `scripts/`、動作確認は `tests/check_tools.py` |
 | 日ごとの整理（非エンジニア向け） | `docs/summaries/<日付>.md` |
 | Skill の解説（非エンジニア向け） | `docs/guide.md` |
-| 使う環境側の設計担当への回答 | `docs/replies/<日付>-*.md`（固有名は書かない） |
+| 使う環境側の設計担当とのやり取り | `docs/replies/`（規則は同フォルダの README。`-to-` が管理側発、`-from-` が設計担当発。固有名は書かない） |
 | 現在地・次にやること・未解決 | `docs/STATUS.md` |
 | 作業ログ | `docs/journal.md` |
 

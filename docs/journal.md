@@ -47,3 +47,4 @@
 2026-10-14 11:50｜リポジトリが kanno-tools 組織へ移動していたため push が 403 だった。App を組織に導入後、旧 URL 経由の push が転送されて成功。README と install-v2 の clone 先を kanno-tools に更新｜完了
 2026-10-14 11:53｜連携打診への回答本文を docs/replies/2026-10-14-to-agent-designer.md に保存（固有名なし）。使う環境側が clone して読める形にする｜完了
 2026-10-14 11:55｜main に 10/8 付の平置き化 commit（Skill の置き場所へ直接 clone できる構成、SSH URL）が直接 push されていたため PR #8 が競合。取り込んで解決。実名定義は references/metric-definitions.local.md（gitignore）に書く方式を導入｜完了
+2026-10-14 12:21｜設計担当（Gemini）が返信を書いて push する手順を docs/replies/README.md に定義（ブランチ reply/<日付>、git add -A 禁止、固有名禁止、PR 経由）｜完了
