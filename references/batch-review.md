@@ -9,7 +9,7 @@
 | 段 | 何が | 誰が | 入力 → 出力 |
 |---|---|---|---|
 | A 分解 | `scripts/split_log.py`（ログ）／`scripts/split_eval.py`（答え合わせリスト） | Python | ログ xlsx → `work/reqNNN.md`（1 行 1 件）＋ `work/meta.csv` |
-| B 判定 | `scripts/run_reviews.sh` | Gemini CLI（1 件 1 回） | `reqNNN.md` → `reqNNN_review.md`（レビュー結果＋判定票） |
+| B 判定 | `scripts/run_reviews.sh` | Gemini CLI（1 件 1 回。`--runs N` で N 回） | `reqNNN.md` → `reqNNN_review.md`（レビュー結果＋判定票） |
 | C 集計 | `scripts/aggregate.py` | Python | `*_review.md` ＋ `meta.csv` → `summary.md`・`rows.csv` |
 
 設計の理由:
@@ -37,6 +37,8 @@ bash $S/run_reviews.sh work/
 python $S/aggregate.py work/
 ```
 
+同じ依頼を複数回レビューして判定の揺れを拾うなら `bash $S/run_reviews.sh work/ --runs 3`。2 回目以降は `reqNNN_review2.md`、`reqNNN_review3.md` に保存され、N 回とも「合致」のときだけ合格。ゲート（改修後の候補 SQL の検査）で使う。費用は N 倍になるので、ログ全件ではなく答え合わせリストの重要な行に使う。
+
 列名が違う時は `--col-timestamp 列1` のように指定する。他のシートに `正誤判定` 列があれば、セッション ID とターン番号で突き合わせて自動で取り込む。
 
 ## 定義の注入と表の絞り込み
@@ -58,14 +60,19 @@ python $S/split_eval.py --csv eval_set.csv --id all --candidate-dir fixes/ --out
 python $S/split_eval.py --csv eval_set.csv --id all --review-expected --out work/ --schema schema.md --definitions definitions.md
 ```
 
+ゲートとして使うときは `bash $S/run_reviews.sh work/ --runs 3` で 3 回とも合致を合格条件にする。流す候補 SQL は、改修後のエージェントにその質問を投げて再生成させたもの（人が手で書いた SQL を通しても、合格するのはその人であってエージェントではない）。
+
 要件は質問・意図・期待する答えの要点から組み立てる。**期待 SQL は依頼に入れない**（入れるとレビューが期待 SQL に引きずられる）。候補と期待 SQL の数値の一致は、この Skill ではなく、同じ 1 日分のパーティションで両方を実行して比べる別の検査で行う。あとは `run_reviews.sh` と `aggregate.py` がそのまま使える。`meta.csv` に `definitions_version` が残るので、定義の改訂と Skill の誤検出を区別できる。
 
 ## summary.md の読み方
 
 1. **判定の分布**: 不一致の割合がエージェントの「数字が違う」率の上限
 2. **直す場所ごとの件数**: ここが本題。用語集（T09・T08）、スキーマの説明文（T13）、日付ルール（T06・T07）、要件の解釈ルール（T02・T04・T05・T11・T12）、表の構造の知識（T01・T10・T14）、NULL・文字列（T03・T15）。件数が多い場所から直す
-3. **人の正誤判定との突き合わせ**: 「先に読む行」＝人と Skill が食い違った行。Skill の誤りか人の見落としかを 1 件ずつ見る。ここが Skill の実データでの精度
-4. **SQL 本数別・ターン別・エラー言及**: 書き直しが多い行、引き継ぎのある行、エラーが出た行で判定が悪化していないか
+3. **D3 タグ**: 摩擦原因の下書き。罠 ID と要確認の理由から機械で付ける（①用語集不足＝T08・T09・理由「定義なし」／②データ基盤側の不足・除外漏れ＝T01・T10・T13・T14・理由「型不明」「定義表外」／③質問の曖昧さ＝理由「指定なし」「解釈複数」／④集計・計算誤り＝T02〜T07・T11・T12・T15）。1 行に複数付くことがある。人が週次で確定する前の下書きであって、確定ではない
+4. **要確認の理由（種別ごと）**: 判定票の「要確認にした理由」を種別（定義なし／指定なし／解釈複数／型不明／定義表外）で集計し、対象を多い順に並べる。「定義なし」の対象は定義表に足す行そのもの。毎週ここが減れば用語集が育っている。種別外の書き方は「その他」に落ちるので、多ければ Skill の文言を疑う
+5. **複数回レビュー（`--runs`）**: 合格（全回が合致）と不合格の件数、判定が揺れた行。揺れた行は要件の曖昧さか判定基準の境界なので先に見る。`rows.csv` の `verdict_runs`（例: 合致/要確認/合致）、`stable`、`gate` 列に残る
+6. **人の正誤判定との突き合わせ**: 「先に読む行」＝人と Skill が食い違った行。Skill の誤りか人の見落としかを 1 件ずつ見る。ここが Skill の実データでの精度
+7. **SQL 本数別・ターン別・エラー言及**: 書き直しが多い行、引き継ぎのある行、エラーが出た行で判定が悪化していないか
 
 ## コストの目安
 

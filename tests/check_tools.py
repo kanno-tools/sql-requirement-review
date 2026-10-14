@@ -11,7 +11,7 @@ HERE = Path(__file__).parent
 ROOT = HERE.parent
 
 
-def carry(verdict, hits, unknown=(), q=1, high=0, mid=0, low=0):
+def carry(verdict, hits, unknown=(), q=1, high=0, mid=0, low=0, reason=""):
     rows = []
     for i in range(1, 16):
         t = f"T{i:02d}"
@@ -21,7 +21,7 @@ def carry(verdict, hits, unknown=(), q=1, high=0, mid=0, low=0):
         f"## 判定: {verdict}", "理由", "読解のみ（未実行）", "", "## ズレ一覧", "なし", "",
         "---VERDICT---", "## 判定票", f"- 判定: {verdict}", "- 実行確認: 読解のみ", "- テーブル定義の入手: 事前に渡した", "",
         "| T | 結果（該当／該当なし／不明） | 理由（構造の言葉で 1 行） |", "|---|---|---|", *rows, "",
-        "- 要確認にした理由（判定が要確認のときだけ。構造の言葉で）:",
+        f"- 要確認にした理由（判定が要確認のときだけ。「種別: 対象」を「／」でつなぐ。種別は「書き方」の 5 つだけ）: {reason}",
         "- 定義表が空で「定義なし」になった指標の数: 0 個",
         "- 突き合わせ表で「不明」になった要素の数: 1 個",
         f"- 確認質問の数: {q} 問",
@@ -46,7 +46,7 @@ def main() -> int:
             "req001": carry("合致", []),
             "req002": carry("不一致", ["T02"], q=2, high=1),
             "req003": carry("不一致", ["T11"], high=1),
-            "req004": carry("要確認", ["T14"], unknown=["T13"], mid=1),
+            "req004": carry("要確認", ["T14"], unknown=["T13"], mid=1, reason="定義なし: 売上（税）／指定なし: 期間／自由文"),
             # req005 は Skill が合致、人は × → 食い違い
             "req005": carry("合致", []),
         }
@@ -60,6 +60,15 @@ def main() -> int:
         assert "表の構造の知識" in s
         rows = (work / "rows.csv").read_text(encoding="utf-8")
         assert "req004,2,138" in rows and "True" in rows
+        # D3 タグ: req002（T02）→④、req003（T11）→④、req004（T14＋定義なし＋指定なし）→①②③
+        assert "| ④集計・計算誤り | T02〜T07 T11 T12 T15 | 2 | req002 req003 |" in s, s
+        assert "| ①用語集不足 | T08 T09・理由「定義なし」 | 1 | req004 |" in s, s
+        assert "| ②データ基盤側の不足・除外漏れ | T01 T10 T13 T14・理由「型不明」「定義表外」 | 1 | req004 |" in s, s
+        assert "| ③質問の曖昧さ |" in s and "| 1 | req004 |" in s.split("③質問の曖昧さ")[1].split("\n")[0], s
+        assert "| 定義なし | 1 | 売上（税）（1） |" in s and "| 指定なし | 1 | 期間（1） |" in s and "| その他 | 1 | 自由文（1） |" in s, s
+        r4 = [ln for ln in rows.splitlines() if ln.startswith("req004,")][0]
+        assert "定義なし 指定なし その他" in r4 and "①用語集不足 ②データ基盤側の不足・除外漏れ ③質問の曖昧さ" in r4, r4
+        assert "複数回レビュー" not in s
         print(s)
         # 絞り込み: req002（C02: sales/stores/targets）に customers は入らず、指標定義にある stock は入る
         r2 = (work / "req002.md").read_text(encoding="utf-8")
@@ -98,6 +107,52 @@ def main() -> int:
         (ew / "req002_review.md").write_text(carry("不一致", ["T02"], high=1), encoding="utf-8")
         subprocess.run([sys.executable, ROOT / "scripts/aggregate.py", ew], check=True, capture_output=True)
         assert "| 不一致 | 1 |" in (ew / "summary.md").read_text(encoding="utf-8")
+        # --runs N: 偽の gemini（判定を順に返す）で run_reviews.sh を回し、揺れ・合否が集計に出ること
+        rw = td / "rwork"
+        rw.mkdir()
+        for rid in ["req001", "req002"]:
+            (rw / f"{rid}.md").write_text(f"# {rid}\n要件\nSQL", encoding="utf-8")
+        with (rw / "meta.csv").open("w", newline="", encoding="utf-8") as f:
+            w = _csv.writer(f)
+            w.writerow(["id", "label"])
+            w.writerow(["req001", ""])
+            w.writerow(["req002", ""])
+        fake_bin = td / "bin"
+        fake_bin.mkdir()
+        # 呼び出し順に 合致,合致,合致（req001）→ 合致,要確認,合致（req002）。要確認の回は理由付き
+        plan = td / "plan.txt"
+        plan.write_text("合致\n合致\n合致\n合致\n要確認\n合致\n", encoding="utf-8")
+        (td / "fake_review.py").write_text(
+            "import sys\nfrom pathlib import Path\n"
+            f"sys.path.insert(0, {str(HERE)!r})\n"
+            "from check_tools import carry\n"
+            f"plan = Path({str(plan)!r})\n"
+            "lines = plan.read_text(encoding='utf-8').splitlines()\n"
+            "v = lines.pop(0)\n"
+            "plan.write_text('\\n'.join(lines) + '\\n', encoding='utf-8')\n"
+            "sys.stdin.read()\n"
+            "print(carry(v, [], reason='解釈複数: 期間' if v == '要確認' else ''))\n", encoding="utf-8")
+        (fake_bin / "gemini").write_text(f"#!/usr/bin/env bash\nexec {sys.executable} {td / 'fake_review.py'}\n", encoding="utf-8")
+        (fake_bin / "gemini").chmod(0o755)
+        import os
+        env = {**os.environ, "PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"}
+        r = subprocess.run(["bash", ROOT / "scripts/run_reviews.sh", rw, "--runs", "3"], env=env, capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr + r.stdout
+        assert "req001.md 判定 合致/合致/合致 → 合格" in r.stdout and "req002.md 判定 合致/要確認/合致 → 不合格" in r.stdout, r.stdout
+        assert "合格 1 件、不合格 1 件" in r.stdout, r.stdout
+        assert sorted(p.name for p in rw.glob("req*_review*.md")) == [
+            "req001_review.md", "req001_review2.md", "req001_review3.md",
+            "req002_review.md", "req002_review2.md", "req002_review3.md"]
+        # 再実行は何もしない（済んだ件を飛ばす）
+        r = subprocess.run(["bash", ROOT / "scripts/run_reviews.sh", rw, "--runs=3"], env=env, capture_output=True, text=True)
+        assert "今回 0 件。未処理: 0 件" in r.stdout, r.stdout
+        subprocess.run([sys.executable, ROOT / "scripts/aggregate.py", rw], check=True, capture_output=True)
+        s2 = (rw / "summary.md").read_text(encoding="utf-8")
+        assert "## 複数回レビュー（--runs。2 件。合格＝全回が合致）" in s2 and "| 合格 | 1 |" in s2 and "| 不合格 | 1 |" in s2, s2
+        assert "判定が揺れた行（1 件" in s2 and "req002（合致/要確認/合致）" in s2, s2
+        assert "| 要確認 | 1 |" in s2 and "| 解釈複数 | 1 | 期間（1） |" in s2, s2
+        rows2 = (rw / "rows.csv").read_text(encoding="utf-8")
+        assert "req002,,要確認," in rows2 and ",3,合致/要確認/合致,揺れ,不合格" in rows2 and ",3,合致/合致/合致,安定,合格" in rows2, rows2
     print("check_tools OK")
     return 0
 
