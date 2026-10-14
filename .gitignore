@@ -5,3 +5,6 @@ tests/blind-eval/inputs/
 req*.md
 *_result.md
 *_carry.md
+# 実名の定義（Skill の置き場所が git の checkout になるため）
+*.local.md
+references/schema.md

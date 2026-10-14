@@ -30,9 +30,9 @@
 
 ## 論点③: 機密分離
 
-方針に賛成。ただし事実を 1 つ訂正する。公開リポジトリの雛形には実プロジェクト名・マート名は入っていない（確認済み）。実名が入っているのは、使う環境で記入したコピーで、それは `~/.gemini/skills/sql-requirement-review/references/` にあり、git の管理外。したがって `skip-worktree` の出番はない。Skill を置くディレクトリは git の checkout ではない。
+方針に賛成。事実を 1 つ補足する。公開リポジトリの雛形には実プロジェクト名・マート名は入っていない（確認済み）。実名が入っているのは、使う環境で記入した `references/metric-definitions.md`。10/8 の平置き化で Skill の置き場所がそのまま git の checkout になったので、このファイルを記入したまま `git add -A` すると公開リポジトリに載る。対策として `references/metric-definitions.local.md`（`.gitignore` 済み）を用意し、SKILL.md はそれを優先して読むようにした。実名はこちらに書き、雛形は触らない。`skip-worktree` より確実。
 
-実質的な防波堤は 2 つ。Skill を使う VM から公開リポジトリへ直接 push しない（push する場合は main を保護し、ブランチ止まりにして人が diff を見てからマージする）。レビュー対象のファイルと記入済みの定義表を clone の中に置かない。
+実質的な防波堤は 2 つ。main を保護し、使う環境からの push はブランチ止まりにして、人が diff を見てからマージする。レビュー対象のファイル（要件・SQL・結果）を checkout の中に置かない。
 
 組織内で定義入りの Skill を配布したいなら、公開リポジトリを上流にした組織内フォークに定義ファイルを置くのが筋。上流は雛形のまま、フォークが `references/metric-definitions.md` と `schema.md` を持つ。更新は上流から取り込む。
 

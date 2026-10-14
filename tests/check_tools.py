@@ -1,4 +1,4 @@
-"""skill/scripts/ の分解→集計を、架空ログと合成したレビュー結果で通しで確かめる（Gemini は呼ばない）。
+"""scripts/ の分解→集計を、架空ログと合成したレビュー結果で通しで確かめる（Gemini は呼ばない）。
 
     python tests/check_tools.py
 """
@@ -32,7 +32,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
         subprocess.run([sys.executable, HERE / "make_fake_log.py", td / "log.xlsx"], check=True, capture_output=True)
-        subprocess.run([sys.executable, ROOT / "skill/scripts/split_log.py", "--xlsx", td / "log.xlsx",
+        subprocess.run([sys.executable, ROOT / "scripts/split_log.py", "--xlsx", td / "log.xlsx",
                         "--out", td / "work", "--schema", HERE / "schema.md"], check=True, capture_output=True)
         work = td / "work"
         reqs = sorted(p.name for p in work.glob("req*.md"))
@@ -51,7 +51,7 @@ def main() -> int:
         }
         for rid, txt in fake.items():
             (work / f"{rid}_review.md").write_text(txt, encoding="utf-8")
-        subprocess.run([sys.executable, ROOT / "skill/scripts/aggregate.py", work], check=True, capture_output=True)
+        subprocess.run([sys.executable, ROOT / "scripts/aggregate.py", work], check=True, capture_output=True)
         s = (work / "summary.md").read_text(encoding="utf-8")
         assert "| 合致 | 2 |" in s and "| 不一致 | 2 |" in s and "| 要確認 | 1 |" in s, s
         assert "| T14 | 1 | 0 |" in s and "| T13 | 0 | 1 |" in s, s
