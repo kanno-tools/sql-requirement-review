@@ -50,3 +50,4 @@
 2026-10-14 12:21｜設計担当（Gemini）が返信を書いて push する手順を docs/replies/README.md に定義（ブランチ reply/<日付>、git add -A 禁止、固有名禁止、PR 経由）｜完了
 2026-10-14 12:24｜設計担当の返信（reply/2026-10-14、固有名なし）を確認。3 論点・要望 4 点に合意、改修 3 点の依頼。[U-1014-01] に着手: --definitions、split_eval.py、表名による絞り込み｜完了
 2026-10-14 12:30｜設計担当の返信を main にマージ（PR #10）。[U-1014-01] を実装: scripts/reqbuild.py（表名抽出・テーブル定義の絞り込み・依頼の組み立て）、split_log.py に --definitions と絞り込み、split_eval.py 新設、run_reviews.sh/aggregate.py を追随、SKILL.md に指標定義の優先順位、batch-review.md に説明。check_tools に検査追加｜完了
+2026-10-14 12:31｜設計担当が PR #11 の内容を確認。main にマージ（0c8b0f0）。改修 3 点が本線に入った｜完了
